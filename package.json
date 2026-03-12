@@ -1,21 +1,23 @@
 {
   "name": "calendar-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "הלוח שנה של חייקי - לוח שנה עברי ולועזי",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "vercel dev"
   },
   "keywords": [],
-  "author": "",
+  "author": "ylapidot226",
   "license": "ISC",
   "type": "module",
   "dependencies": {
     "@hebcal/core": "^6.0.8",
+    "@neondatabase/serverless": "^0.10.0",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "node-cron": "^4.2.1",
+    "jose": "^6.0.0",
     "nodemailer": "^8.0.2"
   }
 }
