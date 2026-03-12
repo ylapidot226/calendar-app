@@ -366,9 +366,11 @@
         position: sticky;
         bottom: 0;
         z-index: 60;
+        margin-top: auto;
       }
       .inline-editor.active {
-        display: block;
+        display: flex;
+        flex-direction: column;
         animation: slideUp 0.2s ease-out;
       }
       .inline-editor-header {
@@ -435,12 +437,13 @@
         font-family: inherit;
         cursor: pointer;
         transition: all 0.15s;
+        margin-top: auto;
       }
       .inline-editor-edit-btn:active {
         background: var(--accent2);
         border-color: var(--accent);
       }
-      .inline-editor-edit-area { display: none; }
+      .inline-editor-edit-area { display: none; margin-top: auto; }
       .inline-editor-edit-area.active { display: block; }
       .inline-editor-save-btn {
         width: 100%;
