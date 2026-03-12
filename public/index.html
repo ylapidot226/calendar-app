@@ -183,6 +183,9 @@
     .auth-box.register-mode .password-confirm { display: block; }
     .password-hint { font-size: 12px; color: var(--text3); margin-bottom: 12px; text-align: right; }
 
+    /* Inline editor (mobile) */
+    .inline-editor { display: none; }
+
     /* Day detail popup (mobile) */
     .day-popup-overlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
@@ -217,7 +220,13 @@
     /* Mobile responsive */
     @media (max-width: 768px) {
       body { background: var(--card); }
-      .app-container { padding: 0; max-width: 100%; }
+      .app-container {
+        padding: 0; max-width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .calendar-grid { flex: 1; }
 
       /* Top bar - compact sticky header */
       .top-bar {
@@ -345,29 +354,71 @@
       .location-chips { gap: 4px; }
       .loc-chip { padding: 5px 10px; font-size: 12px; }
 
-      /* Day popup - improved bottom sheet */
-      .day-popup {
-        border-radius: 24px 24px 0 0;
-        padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
-        max-height: 70vh;
-        animation: slideUp 0.25s ease-out;
+      /* Hide popup overlay on mobile - use inline editor instead */
+      .day-popup-overlay { display: none !important; }
+
+      /* Inline editor - fixed at bottom */
+      .inline-editor {
+        display: none;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        position: sticky;
+        bottom: 0;
+        z-index: 60;
       }
-      .day-popup::before {
-        content: '';
+      .inline-editor.active {
         display: block;
-        width: 36px; height: 4px;
-        background: var(--border);
-        border-radius: 2px;
-        margin: 0 auto 16px;
+        animation: slideUp 0.2s ease-out;
       }
-      .day-popup-header { margin-bottom: 12px; }
-      .day-popup-title { font-size: 20px; }
-      .day-popup-sub { font-size: 14px; }
-      .day-popup-shabbat { font-size: 14px; }
-      .day-popup-textarea {
-        height: 140px; font-size: 16px;
-        border-radius: 14px; padding: 14px;
+      .inline-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
       }
+      .inline-editor-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-left: 8px;
+      }
+      .inline-editor-sub {
+        font-size: 12px;
+        color: var(--text3);
+      }
+      .inline-editor-shabbat {
+        font-size: 11px;
+        color: #9333ea;
+        line-height: 1.3;
+      }
+      .inline-editor-textarea {
+        width: 100%;
+        height: 80px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-family: inherit;
+        font-size: 15px;
+        direction: rtl;
+        resize: none;
+        outline: none;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        transition: border-color 0.15s;
+      }
+      .inline-editor-textarea:focus {
+        border-color: var(--accent);
+      }
+
+      /* Selected day highlight */
+      .day-cell.selected {
+        box-shadow: inset 0 0 0 2px var(--accent) !important;
+        background: var(--accent2);
+      }
+      .day-cell.selected.shabbat { background: #ede9fe; }
+      .day-cell.selected.today { background: #fef3c7; }
     }
 
     @keyframes slideUp {
@@ -431,6 +482,17 @@
   </div>
   <div class="day-names" id="dayNames"></div>
   <div class="calendar-grid" id="calendarGrid"></div>
+  <!-- Mobile inline editor (below calendar) -->
+  <div class="inline-editor" id="inlineEditor">
+    <div class="inline-editor-header">
+      <div>
+        <span class="inline-editor-title" id="inlineTitle"></span>
+        <span class="inline-editor-sub" id="inlineSub"></span>
+      </div>
+      <div class="inline-editor-shabbat" id="inlineShabbat"></div>
+    </div>
+    <textarea class="inline-editor-textarea" id="inlineText" placeholder="הקלד כאן..."></textarea>
+  </div>
 </div>
 
 <div class="modal-overlay" id="settingsModal">
@@ -841,10 +903,16 @@ function toGematriya(year) {
   return 'ה׳'+s;
 }
 
-// Mobile day popup
+// Mobile day interaction
 const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 let popupKey = null;
+let inlineKey = null;
+
 function openDayPopup(key, title, sub, shabbatHtml) {
+  if (isMobile()) {
+    openInlineEditor(key, title, sub, shabbatHtml);
+    return;
+  }
   popupKey = key;
   document.getElementById('popupTitle').textContent = title;
   document.getElementById('popupSub').textContent = sub;
@@ -855,12 +923,61 @@ function openDayPopup(key, title, sub, shabbatHtml) {
   document.getElementById('dayPopup').classList.add('active');
   document.getElementById('popupText').focus();
 }
+
+function openInlineEditor(key, title, sub, shabbatHtml) {
+  // Save previous day if switching
+  if (inlineKey && inlineKey !== key) {
+    syncInlineToCell(inlineKey);
+  }
+  // Remove previous selection
+  document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+  // Highlight selected cell
+  const cell = document.querySelector(`.day-cell[data-key="${key}"]`);
+  if (cell) cell.classList.add('selected');
+
+  inlineKey = key;
+  document.getElementById('inlineTitle').textContent = title;
+  document.getElementById('inlineSub').textContent = sub;
+  const shabbatEl = document.getElementById('inlineShabbat');
+  shabbatEl.innerHTML = shabbatHtml || '';
+  shabbatEl.style.display = shabbatHtml ? 'block' : 'none';
+  const ta = document.getElementById('inlineText');
+  ta.value = entries[key] || '';
+  document.getElementById('inlineEditor').classList.add('active');
+  ta.focus();
+}
+
+function syncInlineToCell(key) {
+  const text = document.getElementById('inlineText').value;
+  saveEntry(key, text);
+  const cell = document.querySelector(`.day-cell[data-key="${key}"]`);
+  if (cell) {
+    cell.classList.toggle('day-has-text', !!text.trim());
+    const ta = cell.querySelector('.day-text');
+    if (ta) ta.value = text;
+  }
+}
+
+// Inline editor input handler
+document.getElementById('inlineText').addEventListener('input', function() {
+  if (inlineKey) saveEntry(inlineKey, this.value);
+});
+
+// Sync when changing months
+const origRender = renderCalendar;
+renderCalendar = async function() {
+  if (inlineKey) syncInlineToCell(inlineKey);
+  inlineKey = null;
+  document.getElementById('inlineEditor').classList.remove('active');
+  document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+  await origRender();
+};
+
 function closeDayPopup() {
   document.getElementById('dayPopup').classList.remove('active');
   if (popupKey) {
     const text = document.getElementById('popupText').value;
     saveEntry(popupKey, text);
-    // Update cell: dot indicator + text preview
     const cell = document.querySelector(`.day-cell[data-key="${popupKey}"]`);
     if (cell) {
       cell.classList.toggle('day-has-text', !!text.trim());
