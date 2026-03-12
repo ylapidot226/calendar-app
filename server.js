@@ -130,10 +130,13 @@ app.get('/api/hebrew-month', requireAuth, (req, res) => {
     for (let d = 1; d <= daysInMonth; d++) {
       const hd = new HDate(d, m, y);
       const greg = hd.greg();
+      const gYear = greg.getFullYear();
+      const gMonth = String(greg.getMonth() + 1).padStart(2, '0');
+      const gDay = String(greg.getDate()).padStart(2, '0');
       days.push({
         hebrewDay: d,
         hebrewDateStr: hd.renderGematriya(true),
-        gregDate: greg.toISOString().slice(0, 10),
+        gregDate: `${gYear}-${gMonth}-${gDay}`,
         gregDay: greg.getDate(),
         gregMonth: greg.getMonth() + 1,
         gregYear: greg.getFullYear(),
