@@ -411,6 +411,52 @@
       .inline-editor-textarea:focus {
         border-color: var(--accent);
       }
+      .inline-editor-preview {
+        font-size: 14px;
+        color: var(--text2);
+        direction: rtl;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 60px;
+        overflow-y: auto;
+        margin-bottom: 8px;
+      }
+      .inline-editor-preview:empty { display: none; }
+      .inline-editor-edit-btn {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        background: var(--bg);
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .inline-editor-edit-btn:active {
+        background: var(--accent2);
+        border-color: var(--accent);
+      }
+      .inline-editor-edit-area { display: none; }
+      .inline-editor-edit-area.active { display: block; }
+      .inline-editor-save-btn {
+        width: 100%;
+        padding: 10px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 12px;
+        background: var(--accent);
+        color: white;
+        font-size: 15px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .inline-editor-save-btn:active { background: #2563eb; }
 
       /* Selected day highlight */
       .day-cell.selected {
@@ -491,7 +537,12 @@
       </div>
       <div class="inline-editor-shabbat" id="inlineShabbat"></div>
     </div>
-    <textarea class="inline-editor-textarea" id="inlineText" placeholder="הקלד כאן..."></textarea>
+    <div class="inline-editor-preview" id="inlinePreview"></div>
+    <button class="inline-editor-edit-btn" id="inlineEditBtn" onclick="startInlineEdit()">עריכה</button>
+    <div class="inline-editor-edit-area" id="inlineEditArea">
+      <textarea class="inline-editor-textarea" id="inlineText" placeholder="הקלד כאן..."></textarea>
+      <button class="inline-editor-save-btn" onclick="saveInlineEdit()">שמירה</button>
+    </div>
   </div>
 </div>
 
@@ -927,7 +978,7 @@ function openDayPopup(key, title, sub, shabbatHtml) {
 function openInlineEditor(key, title, sub, shabbatHtml) {
   // Save previous day if switching
   if (inlineKey && inlineKey !== key) {
-    syncInlineToCell(inlineKey);
+    closeInlineEdit();
   }
   // Remove previous selection
   document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
@@ -941,15 +992,47 @@ function openInlineEditor(key, title, sub, shabbatHtml) {
   const shabbatEl = document.getElementById('inlineShabbat');
   shabbatEl.innerHTML = shabbatHtml || '';
   shabbatEl.style.display = shabbatHtml ? 'block' : 'none';
-  const ta = document.getElementById('inlineText');
-  ta.value = entries[key] || '';
+
+  // Show preview text, hide edit area
+  const preview = document.getElementById('inlinePreview');
+  const text = entries[key] || '';
+  preview.textContent = text;
+  document.getElementById('inlineText').value = text;
+  document.getElementById('inlineEditBtn').style.display = 'block';
+  document.getElementById('inlineEditArea').classList.remove('active');
   document.getElementById('inlineEditor').classList.add('active');
+}
+
+function startInlineEdit() {
+  document.getElementById('inlineEditBtn').style.display = 'none';
+  document.getElementById('inlineEditArea').classList.add('active');
+  const ta = document.getElementById('inlineText');
   ta.focus();
+}
+
+function saveInlineEdit() {
+  if (!inlineKey) return;
+  const text = document.getElementById('inlineText').value;
+  saveEntry(inlineKey, text);
+  syncInlineToCell(inlineKey);
+  // Back to preview mode
+  document.getElementById('inlinePreview').textContent = text;
+  document.getElementById('inlineEditArea').classList.remove('active');
+  document.getElementById('inlineEditBtn').style.display = 'block';
+}
+
+function closeInlineEdit() {
+  if (!inlineKey) return;
+  // If edit area is open, save first
+  if (document.getElementById('inlineEditArea').classList.contains('active')) {
+    const text = document.getElementById('inlineText').value;
+    saveEntry(inlineKey, text);
+    syncInlineToCell(inlineKey);
+  }
 }
 
 function syncInlineToCell(key) {
   const text = document.getElementById('inlineText').value;
-  saveEntry(key, text);
   const cell = document.querySelector(`.day-cell[data-key="${key}"]`);
   if (cell) {
     cell.classList.toggle('day-has-text', !!text.trim());
@@ -958,17 +1041,13 @@ function syncInlineToCell(key) {
   }
 }
 
-// Inline editor input handler
-document.getElementById('inlineText').addEventListener('input', function() {
-  if (inlineKey) saveEntry(inlineKey, this.value);
-});
-
 // Sync when changing months
 const origRender = renderCalendar;
 renderCalendar = async function() {
-  if (inlineKey) syncInlineToCell(inlineKey);
+  closeInlineEdit();
   inlineKey = null;
   document.getElementById('inlineEditor').classList.remove('active');
+  document.getElementById('inlineEditArea').classList.remove('active');
   document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
   await origRender();
 };
