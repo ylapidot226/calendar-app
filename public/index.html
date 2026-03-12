@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>הלוח שנה של חייקי</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon.svg">
@@ -216,49 +216,178 @@
 
     /* Mobile responsive */
     @media (max-width: 768px) {
-      .app-container { padding: 10px 6px; }
-      .top-bar { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-      .top-bar .right-side { gap: 6px; }
-      .top-bar .user-label { font-size: 13px; padding: 6px 12px; }
-      .icon-btn { width: 34px; height: 34px; font-size: 16px; }
-      .text-btn { padding: 6px 12px; font-size: 12px; }
+      body { background: var(--card); }
+      .app-container { padding: 0; max-width: 100%; }
 
-      .month-header { gap: 10px; margin-bottom: 8px; }
-      .month-title { min-width: auto; }
-      .month-title .primary { font-size: 20px; }
-      .month-title .secondary { font-size: 12px; }
-      .nav-btn { width: 34px; height: 34px; font-size: 18px; }
-
-      .day-names div { font-size: 11px; padding: 4px 0; }
-      .calendar-grid { gap: 2px; }
-      .day-names { gap: 2px; margin-bottom: 2px; }
-
-      .day-cell {
-        min-height: auto; padding: 5px 3px; border-radius: 8px; border-width: 1.5px;
-        cursor: pointer; position: relative;
+      /* Top bar - compact sticky header */
+      .top-bar {
+        position: sticky; top: 0; z-index: 50;
+        background: var(--card); border-bottom: 1px solid var(--border);
+        padding: 8px 12px; margin-bottom: 0;
+        flex-wrap: nowrap; gap: 6px;
       }
-      .day-cell:active { background: var(--hover); }
-      .day-head { margin-bottom: 1px; }
-      .day-num { font-size: 14px; }
-      .day-sub { font-size: 9px; }
-      .shabbat-label { font-size: 8px; line-height: 1.15; margin-bottom: 0; }
-      .day-text { display: none; }
+      .top-bar .right-side { gap: 6px; }
+      .top-bar .user-label { font-size: 12px; padding: 5px 10px; border-radius: 16px; }
+      .icon-btn { width: 32px; height: 32px; font-size: 15px; border-radius: 8px; }
+      .text-btn { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
 
+      /* Month header - tight and clean */
+      .month-header {
+        gap: 12px; margin-bottom: 0;
+        padding: 10px 12px 6px;
+        background: var(--card);
+      }
+      .month-title { min-width: auto; }
+      .month-title .primary { font-size: 20px; font-weight: 700; }
+      .month-title .secondary { font-size: 11px; margin-top: 1px; }
+      .nav-btn {
+        width: 32px; height: 32px; font-size: 16px;
+        background: var(--hover); box-shadow: none;
+      }
+      .nav-btn:hover { background: var(--accent); color: white; }
+
+      /* Day names row */
+      .day-names {
+        gap: 1px; margin-bottom: 1px;
+        padding: 0 2px;
+        background: var(--bg);
+      }
+      .day-names div {
+        font-size: 10px; padding: 6px 0;
+        font-weight: 600; color: var(--text3);
+        letter-spacing: 0.3px;
+      }
+
+      /* Calendar grid - full width, tight cells */
+      .calendar-grid {
+        gap: 1px;
+        padding: 0 2px 2px;
+        background: var(--bg);
+      }
+
+      /* Day cells - taller, show content */
+      .day-cell {
+        min-height: 68px;
+        padding: 4px 5px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        transition: background 0.1s;
+        overflow: hidden;
+      }
+      .day-cell:hover { border-color: transparent; box-shadow: none; }
+      .day-cell:active { background: var(--hover); }
+      .day-cell.today {
+        background: var(--today-bg);
+        border: none;
+        box-shadow: inset 0 0 0 2px var(--today-border);
+      }
+      .day-cell.shabbat { background: var(--shabbat-bg); }
+      .day-cell.other-month { opacity: 0.3; min-height: 40px; }
+
+      /* Day header */
+      .day-head {
+        margin-bottom: 2px;
+        flex-shrink: 0;
+        pointer-events: none;
+      }
+      .day-num { font-size: 14px; font-weight: 700; line-height: 1; }
+      .day-sub { font-size: 8px; font-weight: 400; opacity: 0.7; }
+
+      /* Shabbat label */
+      .shabbat-label {
+        font-size: 7.5px; line-height: 1.2;
+        margin-bottom: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Text preview - VISIBLE on mobile */
+      .day-text {
+        display: block !important;
+        height: auto;
+        flex: 1;
+        min-height: 0;
+        font-size: 9px;
+        line-height: 1.3;
+        color: var(--text2);
+        pointer-events: none;
+        overflow: hidden;
+        padding: 0;
+        border: none;
+        background: transparent;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        display: -webkit-box !important;
+        text-overflow: ellipsis;
+      }
+
+      /* Text indicator dot - enhanced */
+      .day-has-text::after {
+        width: 5px; height: 5px;
+        bottom: 2px;
+        background: var(--accent);
+        box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.2);
+      }
+
+      /* Auth */
       .auth-box { width: 92vw; padding: 32px 24px; border-radius: 16px; }
       .auth-box h1 { font-size: 24px; }
       .auth-box .subtitle { font-size: 14px; margin-bottom: 24px; }
 
-      .modal { padding: 24px; border-radius: 16px; }
-      .modal h2 { font-size: 19px; margin-bottom: 18px; }
+      /* Settings modal */
+      .modal { padding: 20px; border-radius: 16px; }
+      .modal h2 { font-size: 19px; margin-bottom: 16px; }
       .location-chips { gap: 4px; }
       .loc-chip { padding: 5px 10px; font-size: 12px; }
+
+      /* Day popup - improved bottom sheet */
+      .day-popup {
+        border-radius: 24px 24px 0 0;
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+        max-height: 70vh;
+        animation: slideUp 0.25s ease-out;
+      }
+      .day-popup::before {
+        content: '';
+        display: block;
+        width: 36px; height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 0 auto 16px;
+      }
+      .day-popup-header { margin-bottom: 12px; }
+      .day-popup-title { font-size: 20px; }
+      .day-popup-sub { font-size: 14px; }
+      .day-popup-shabbat { font-size: 14px; }
+      .day-popup-textarea {
+        height: 140px; font-size: 16px;
+        border-radius: 14px; padding: 14px;
+      }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
     @media (max-width: 380px) {
+      .day-cell { min-height: 60px; }
       .day-num { font-size: 12px; }
-      .day-sub { font-size: 8px; }
+      .day-sub { font-size: 7px; }
       .shabbat-label { font-size: 7px; }
+      .day-text { font-size: 8px; -webkit-line-clamp: 2; }
       .month-title .primary { font-size: 18px; }
+    }
+
+    /* Landscape mobile - wider cells */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .day-cell { min-height: 56px; }
+      .calendar-grid { padding-bottom: env(safe-area-inset-bottom); }
     }
   </style>
 </head>
@@ -731,9 +860,13 @@ function closeDayPopup() {
   if (popupKey) {
     const text = document.getElementById('popupText').value;
     saveEntry(popupKey, text);
-    // Update dot indicator
+    // Update cell: dot indicator + text preview
     const cell = document.querySelector(`.day-cell[data-key="${popupKey}"]`);
-    if (cell) cell.classList.toggle('day-has-text', !!text.trim());
+    if (cell) {
+      cell.classList.toggle('day-has-text', !!text.trim());
+      const ta = cell.querySelector('.day-text');
+      if (ta) ta.value = text;
+    }
   }
   popupKey = null;
 }
